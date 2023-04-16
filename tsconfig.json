@@ -1,17 +1,23 @@
 {
+	"extends": "fastify-tsconfig",
 	"ts-node": {
         "compilerOptions": {
             "module": "CommonJS"
         }
     },
 	"compilerOptions": {
-	  "target": "ES2017",
 	  "esModuleInterop": true,
 	  "isolatedModules": true,
 	  "moduleResolution": "node",
+	  "outDir": "build",
+	  "rootDir": "./",
+	  "strict": false
 	},
 	"include": [
-	  "*/**/*.ts"
+	  "*/**/*.ts",
+	  "api.ts",
+	  "app.ts",
+	  "server.ts",
 	],
 	"exclude": [
 	  "node_modules"

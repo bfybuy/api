@@ -1,4 +1,4 @@
-import Fastify, { FastifyBaseLogger, FastifyHttp2SecureOptions, FastifyInstance, FastifyTypeProviderDefault } from 'fastify'
+import Fastify, { FastifyBaseLogger, FastifyHttp2SecureOptions } from 'fastify'
 import mongodb from './plugins/database'
 import rateLimitConfig from './config/rate-limit'
 import config from './plugins/config'

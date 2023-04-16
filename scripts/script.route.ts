@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify'
-import { Category } from '../category/category.model'
+// import { Category } from '../category/category.model'
 import { Product } from '../product/product.model'
 import { Source } from '../source/source.model'
 

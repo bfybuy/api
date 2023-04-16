@@ -1,7 +1,6 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply } from 'fastify';
 import fp from 'fastify-plugin'
 import TelegramBot from 'node-telegram-bot-api';
-import path from 'path'
 import { Product } from '../product/product.model';
 import { table } from 'table';
 

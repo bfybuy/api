@@ -8,6 +8,7 @@ const rateLimitConfig: RateLimitPluginOptions = {
 	onExceeded: () => {},
 	onBanReach: () => {},
 	allowList: process.env.RATE_LIMIT_ALLOW_LIST?.split(','),
+	// @ts-ignore
 	max: parseInt(process.env.RATE_LIMIT_MAX_CALLS),
 	timeWindow: process.env.RATE_LIMIT_TIME_WINDOW,
 }
