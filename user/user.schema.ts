@@ -8,8 +8,7 @@ const UserSchema = new mongoose.Schema({
 	agent: {
 		type: String,
 		enum: ['Web', 'Telegram', 'WhatsApp']
-	},
-	last_crawled: Date
+	}
 })
 
 export default UserSchema

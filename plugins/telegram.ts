@@ -3,8 +3,15 @@ import fp from 'fastify-plugin'
 import TelegramBot from 'node-telegram-bot-api';
 import { Product } from '../product/product.model';
 import { table } from 'table';
+import { User } from '../user/user.model';
 
-async function groceryList(msg: string) {
+/**
+ * Perform a DB lookup with grocery items
+ * passed.
+ * @param msg \n Delimited string
+ * @returns Array
+ */
+async function performDBLookup(msg: string) {
 	let results = []
 	const list = msg.split('\n')
 
@@ -13,13 +20,14 @@ async function groceryList(msg: string) {
 
 		// @ts-ignore
 		const product = await Product.find({
+			// TODO: Only return at least 50% matches
 			$or: [
 				{ name: new RegExp(listItem, 'i') },
 				{ "meta.Ingredients": new RegExp(listItem, 'i') }
 			]
 		}, 'name price size picture source', {
 			skip: 0,
-			limit: 4,
+			limit: 4, //TODO: We may return everything since we will have an algorithm to filter
 		})
 		.exec()
 
@@ -27,6 +35,63 @@ async function groceryList(msg: string) {
 	}
 
 	return results
+}
+
+/**
+ * 1. Don't return duplicates
+ * 2. Only return 50% matches
+ * 3. Return the cheapest based on price
+ *
+ * @param data
+ */
+async function searchAlgorithm (data: { matches: any[]; search: string | number; }[]) {
+	/**
+	 * Return array should be similar to:
+	 * [
+	 * 	{
+	 * 		source: 'Aldi',
+	 * 		item: 'Wholemeal Bread',
+	 * 		price_per_unit: '£0.92',
+	 * 		unit: 100g
+	 * 	}
+	 * ]
+	 */
+	const response = []
+
+	data.map((datum: { matches: any[]; search: string | number; }) => {
+		datum.matches.sort((a: { price: string; }, b: { price: string; }) => {
+
+			// Some products may not have a price (tough!) - so we have to push them to the end
+			if(!a.price) {
+				console.log(a, " doesn't have a price")
+				return -1
+			}
+
+			if (a?.price?.includes('£')) {
+				a.price = a.price?.slice(1)
+				b.price = b.price?.slice(1)
+			}
+
+			// Sort a after b if a has a higher price than b
+			return parseFloat(a.price) > parseFloat(b.price) ? 1 : -1
+		})
+
+		response[datum.search] = datum.matches[0] //Store only the first match in our response
+	})
+
+	return response
+}
+
+async function storeUser(msg) {
+	// Store user data if not exist
+	// @ts-ignore
+	const user = new User({
+		firstname: msg.from.first_name,
+		lastname: msg.from.last_name,
+		agent: 'Telegram',
+	})
+
+	user.save()
 }
 
 async function Telegram(fastify, options, done) {
@@ -45,84 +110,30 @@ async function Telegram(fastify, options, done) {
 	 * For longer tasks, use a queue!!
 	 */
 	fastify.post(`/bot${TOKEN}`, (req, reply: FastifyReply) => {
+		console.log('TG payload to us is ', req.body)
 		bot.processUpdate(req.body);
 		reply.send({}).status(200)
 	});
 
 	// Just to ping!
 	bot.on('message', async (msg) => {
+
+		storeUser(msg)
+
+		// Perform Search
 		if(msg.text.includes('\n'))
 		{
-			const results = await groceryList(msg.text)
-			let response
-			let grid = []
+			const results = await performDBLookup(msg.text)
 
-			results.forEach(result => {
-				if(grid.length === 0)
-				{
-					// grid.push(Object.keys(result.matches[0]))
-					// manually set headers
-					grid.push(
-						[
-							'Name',
-							'Size',
-							'Price'
-						]
-					)
-				}
+			await searchAlgorithm(results)
 
-				result.matches.forEach(product => {
-					grid.push([
-						product?.name,
-						product?.price,
-						product?.size
-					])
-				})
-
-				response = table(grid, {
-					header: {
-						content: result.search,
-						alignment: 'center'
-					}
-				})
-
-				bot.sendMessage(msg.chat.id, `Here are some results that match your item ${result.search}. Select specific ones by specifying their fully qualified names: \n\n${response.toString()}`);
-			})
-
-			console.log('Grid should lok like ', grid)
+			bot.sendMessage(msg.chat.id, `Here are some results that match your item. Select specific ones by specifying their fully qualified names:`);
 		}
 		else
 		{
 			bot.sendMessage(msg.chat.id, `Sorry but I couldn't find a list in your message. Try again by typing your groceries like this: \n\nEggs\nSpinach\nTurkey\nMilk`)
 		}
 	});
-
-	/**
-	 * {
-		update_id: 787513749,
-			message: {
-				message_id: 5,
-				from: {
-					id: 789154196,
-					is_bot: false,
-					first_name: 'Samuel',
-					last_name: 'Olaegbe',
-					username: 'samuelolaegbe',
-					language_code: 'en'
-				},
-				chat: {
-					id: 789154196,
-					first_name: 'Samuel',
-					last_name: 'Olaegbe',
-					username: 'samuelolaegbe',
-					type: 'private'
-				},
-				date: 1681595301,
-				text: '/start',
-				entities: [ [Object] ]
-			}
-		}
-	 */
 }
 
 export default fp(Telegram, { name: 'telegram-bot' })
