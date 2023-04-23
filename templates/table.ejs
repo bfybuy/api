@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="https://cdn.tailwindcss.com"></script>
+	</head>
+	<body>
+		<table class="table-auto">
+			<thead>
+				<tr>
+					<% for (var i = 0; i < data[0].length; i++) { %>
+						<th><%= data[0][i] %></th>
+					<% } %>
+				</tr>
+			</thead>
+			<tbody>
+				<% for (var y = 0; y < data.length; y++) { %>
+					<tr>
+						<td><%= data[y].name %></td>
+						<td>Malcolm Lockyer</td>
+						<td>1961</td>
+					</tr>
+				<% } %>
+			</tbody>
+		</table>
+	</body>
+</html>

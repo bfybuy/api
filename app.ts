@@ -6,6 +6,7 @@ import fastifyRateLimit from '@fastify/rate-limit'
 import Telegram from './plugins/telegram'
 import { apiRoutes } from './api'
 import { Http2SecureServer } from 'http2'
+import viewsConfig from './config/view'
 
 async function app(options: FastifyHttp2SecureOptions<Http2SecureServer, FastifyBaseLogger>) {
 	const fastify = Fastify(options)
@@ -15,6 +16,8 @@ async function app(options: FastifyHttp2SecureOptions<Http2SecureServer, Fastify
 
 	fastify.register(mongodb)
 	fastify.register(Telegram)
+	fastify.register(require('@fastify/formbody'))
+	fastify.register(require('@fastify/view'), viewsConfig)
 	fastify.register(apiRoutes, { prefix: '/v1' })
 
 	return fastify

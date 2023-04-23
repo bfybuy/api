@@ -9,6 +9,10 @@ const CompareController = {
 		// Run query against product table
 
 		// Return matched products
+	},
+
+	table() {
+		// return CompareService.bot()
 	}
 }
 

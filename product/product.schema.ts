@@ -9,10 +9,7 @@ const ProductSchema = new mongoose.Schema({
 		ref: 'Categories'
 	},
 	picture: [String],
-	url: {
-		type: String,
-		unique: true
-	},
+	url: String,
 	source: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: 'Sources'
