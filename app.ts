@@ -7,6 +7,8 @@ import Telegram from './plugins/telegram'
 import { apiRoutes } from './api'
 import { Http2SecureServer } from 'http2'
 import viewsConfig from './config/view'
+import path from 'path'
+import fastifyStatic from '@fastify/static'
 
 async function app(options: FastifyHttp2SecureOptions<Http2SecureServer, FastifyBaseLogger>) {
 	const fastify = Fastify(options)
@@ -19,6 +21,11 @@ async function app(options: FastifyHttp2SecureOptions<Http2SecureServer, Fastify
 	fastify.register(require('@fastify/formbody'))
 	fastify.register(require('@fastify/view'), viewsConfig)
 	fastify.register(apiRoutes, { prefix: '/v1' })
+	fastify.register(fastifyStatic, {
+		root: path.join(__dirname, 'public'),
+		prefix: '/public/', // optional: default '/'
+		// constraints: { host: 'example.com' } // maybe we allow only api.telegram.com
+	})
 
 	return fastify
 }

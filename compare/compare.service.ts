@@ -28,25 +28,26 @@ const CompareService = {
 			const listItem = list[index];
 
 			// @ts-ignore
-			const product = await Product.find({
+			const productIds = await Product.distinct('name', {
 				// TODO: Only return at least 50% matches
 				$or: [
 					{ name: new RegExp(listItem, 'i') },
 					{ "meta.Ingredients": new RegExp(listItem, 'i') }
 				]
-			}, 'name price size picture source')
-			.populate('source')
+			})
 			.exec()
 
-			results.push({ search: listItem, matches: product })
+			// @ts-ignore
+			const products = await Product.find({
+				name: {
+					$in: productIds
+				}
+			})
+			.select('name price size picture source')
+			.populate('source')
+			.exec();
 
-			/**
-			 *
-			 * 	found 75 results for search Eggs
-				found 107 results for search Spinach
-				found 54 results for search Turkey
-				found 398 results for search Milk
-			 */
+			results.push({ search: listItem, matches: products })
 		}
 
 		return results
@@ -59,15 +60,24 @@ const CompareService = {
 	 */
 	async sortAlgorithm (data: { matches: any[]; search: string | number; }[]) {
 		const response = []
-
+		const uniqueSources = []
+		const responseBody = []
+		const search = []
 		data.map((product: { matches: any[]; search: string | number; }) => {
-			product.matches.sort((a: { cost_per_unit: number; price: string; }, b: { cost_per_unit: number; price: string; }) => {
 
-				// Some products may not have a price (tough!) - so we have to push them to the end
-				if(!a.price) {
-					return -1
-				}
+			// Push the search keyword
+			search.push(product.search)
 
+			console.log('Uncleaned matches for ', product.search, 'are ', product.matches.length)
+
+			// Some products may not have a price (tough!) - so we have to remove them
+			// Price or size has to be at least greater than 1 so we avoid (weird?) zero values
+			const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1)
+
+			console.log('Cleaned products is ', cleanedProducts.length)
+
+			// Sort by cheapest per unit
+			const sortedResults = cleanedProducts?.sort((a: { cost_per_unit: number; price: string;}, b: { cost_per_unit: number; price: string;}) => {
 				a = CompareService.pricePerUnit(a)
 				b = CompareService.pricePerUnit(b)
 
@@ -75,33 +85,124 @@ const CompareService = {
 				return a.cost_per_unit > b.cost_per_unit ? 1 : -1
 			})
 
-			// pick the cheapest 3. What if more than 1 item from the match belongs to the same source
-			const cheapestThree = product.matches.slice(0, 2)
 
-			// Make sure only docs values are returned
-			//_doc is the results only and discards any other mongo jargon
-			cheapestThree.reduce(a => a?._doc)
+			/**
+			 * Our algorithm connotes that we will only return 3 best results. So we don't need to iterate all of the sorted result for one search.
+			 * We can simply retrieve the first 3 items.
+			 */
+			const bestThree = sortedResults.slice(0, 2)
 
-			// @ts-ignore
-			// response.push(cheapestThree.group(({ source }) => source.name))
+			/***
+			 * Products are already sorted from cheapest to most expensive so the
+			 * first items we iterate will be the cheapest we have.
+			 */
+			for (let x = 0; x < bestThree.length; x++) {
+				const item = bestThree[x];
 
-			const rates = []
+				// TODO: What if the source for 1 search does not have the result for the next search? We may have some sources empty, TBD
+				// Our algorithm here assumes implies that the sources we found for the first product will be the same sources that must have the product
+				// for the remaining search items.
+				if (uniqueSources.length === 3) {
+					return uniqueSources
+				}
 
-			cheapestThree.map(item => {
-				rates.push({
-					name: item.name,
-					source: item.source.name,
-					rates: [{
-						size: item.size,
-						price: item.price
-					}]
-				})
-			})
+				const sourceExists = uniqueSources.includes(item.source.name)
 
-			console.log('Rates are =>>> ', ...rates)
+				// source hasn't been pushed previously, so push it
+				if (!sourceExists) {
+					uniqueSources.push(item.source.name)
+				}
+			}
+
+			const row = []
+
+			for (let y = 0; y < sortedResults.length; y++) {
+				const product = sortedResults[y]
+
+				for (let z = 0; z < uniqueSources.length; z++) {
+					const source = uniqueSources[z]
+
+					const exists = row.some(item => item.source?.name === source)
+
+					if (row.length === uniqueSources.length) {
+						return
+					}
+
+					if (product.source.name === source && !exists) {
+						product.cost_rate = CompareService.pricePerUnit(product)
+						row.push(product)
+					}
+				}
+
+				// Don't insert duplicates
+				const doesExist = responseBody.some((arr) =>
+					arr.length === row.length && arr.every((val, index) => val === row[index])
+				)
+
+				if (!doesExist) {
+					responseBody.push(row)
+				}
+			}
 		})
 
-		console.log('Resolved response body ', JSON.stringify(response))
+		// Retrieve sources
+		let headers = uniqueSources
+		// Get unique headers across all products returned (<= 3)
+		headers.unshift('Item')
+
+		// Remove 'Item' from headers and change structure of array
+		const cheapest = headers.slice(1).map(source => {
+			return {
+				source,
+				cheapest: false,
+				text: 0
+			}
+		})
+
+		console.log('Search body is ,', search)
+
+		const rowBody = responseBody.map((products, index) => {
+
+			const cheapestProduct = products.reduce((min, item) => {
+				return item?.cost_rate?.cost_per_unit < min ? item : min
+			}, products[0]);
+
+			// Find the source of the cheapest item in the product group, then increment the source's name
+			const cheapest_source = cheapest.filter(product_source => product_source.source === cheapestProduct.source.name).reduce(c => c)
+			cheapest_source.text += 1
+
+			// Response body and search should have the same length
+			products.unshift(search[index])
+
+			return products.map(item => {
+				return {
+					name: item?.name || item,
+					cost_rate: item.cost_rate ? `${item.cost_rate?.cost_per_unit_string}/100${item.cost_rate?.unit}` : item,
+					source: item?.source?.name || item,
+					...(cheapestProduct?.name === item?.name && { cheapest: true })
+				}
+			})
+		})
+
+		console.log('row body array should be => rowBody => ', rowBody)
+
+		// Find which source's product has the most cheapest items
+		console.log('Cheapest items array => ', cheapest)
+
+		// Push responses
+		response.push(headers)
+		response.push(...rowBody)
+
+		const responseFooter = [
+			{ text: 'Number of items with the lowest cost per unit' },
+		]
+
+		response.push(
+			// @ts-ignore
+			responseFooter.concat(cheapest)
+		)
+
+		console.log('Final response looks like ', response)
 
 		return response
 	},
@@ -137,12 +238,19 @@ const CompareService = {
 		// Get the size without the unit using this weird method
 		size = product.size.slice(0, unit.length + 1)
 
+		const number = new Intl.NumberFormat('en-GB', {
+			style: 'currency',
+			currency: 'GBP'
+		})
+
 		const cost_per_unit = price / parseInt(size)
+		const cost_per_unit_string = number.format(price / parseInt(size))
 
 		return {
-			unit: product.size,
+			unit,
 			price, // in pounds
-			cost_per_unit
+			cost_per_unit,
+			cost_per_unit_string,
 		}
 	}
 }

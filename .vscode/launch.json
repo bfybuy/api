@@ -5,16 +5,17 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"type": "node",
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"name": "nodemon",
+			"program": "${workspaceFolder}/server.ts",
 			"request": "launch",
-			"name": "Launch Program",
+			"restart": true,
+			"runtimeExecutable": "${workspaceFolder}/node_modules/.bin/nodemon",
 			"skipFiles": [
 				"<node_internals>/**"
 			],
-			"program": "${workspaceFolder}/compare/compare.service.ts",
-			"outFiles": [
-				"${workspaceFolder}/**/*.js"
-			]
-		}
+			"type": "node"
+		},
 	]
 }

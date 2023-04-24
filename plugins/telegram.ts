@@ -31,15 +31,15 @@ async function Telegram(fastify, options, done) {
 		UserService.storeUser(msg)
 
 		// Perform Search
-		if(msg.text.includes('\n'))
+		if(msg.text?.includes('\n'))
 		{
-
 			const results = await CompareService.performDBLookup(msg.text)
 			const sortedResults = await CompareService.sortAlgorithm(results)
 
-			await GeneratorImage.table(sortedResults)
+			const url = await GeneratorImage.table(sortedResults)
 
-			bot.sendMessage(msg.chat.id, `Here are some results that match your item. Select specific ones by specifying their fully qualified names:`);
+			bot.sendMessage(msg.chat.id, `We've found the best stores to purchase your grocery items from!!`);
+			bot.sendPhoto(msg.chat.id, url);
 		}
 		else
 		{
