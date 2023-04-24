@@ -26,12 +26,12 @@
 							<% for (var z = 0; z < data[y].length; z++) { %>
 								<% product = data[y][z] %>
 								<td scope="row"
-									<% if (z === 0) { %>class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50  " <% } %>
+									<% if (z === 0) { %>class="px-6 py-4 text-gray-900 whitespace-nowrap bg-gray-50  " <% } %>
 									<% if (z % 2 === 0) { %>class="px-6 py-4 bg-gray-50 " <% } %>
 									class="px-6 py-4"
 								>
 									<% if (product.cheapest) { %>
-										<strong>
+										<strong class="font-medium">
 											<%= product.cost_rate %>
 										</strong>
 									<% } else { %>
