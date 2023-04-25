@@ -4,7 +4,8 @@
   "description": "API for the price comparison service",
   "scripts": {
     "dev": "nodemon",
-    "build": "rimraf ./build && tsc",
+    "build": "rimraf ./build && tsc && mkdir build/public",
+    "start": "node build/server.js",
     "test": "mocha server/tests/**/*.test.ts --recursive --timeout 10000",
     "script": "node ts-node --project tsconfig.server.json server.ts",
     "prettier": "npx prettier ./**/*.js --write"
