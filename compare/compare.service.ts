@@ -121,11 +121,19 @@ const CompareService = {
 
 			const row = []
 
+			if (sortedResults.length === 0) {
+				return
+			}
+
 			for (let y = 0; y < sortedResults.length; y++) {
 				const product = sortedResults[y]
 
 				for (let z = 0; z < uniqueSources.length; z++) {
 					const source = uniqueSources[z]
+
+					if (!source) {
+						continue
+					}
 
 					const exists = row.some(item => item.source?.name === source)
 

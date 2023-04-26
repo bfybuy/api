@@ -41,7 +41,7 @@ const GeneratorImage = {
             await page.close()
         ]);
         console.log('Finished generating picture');
-        return process.env.SSL_APP_URL + '/public/table.jpeg';
+        return process.env.SSL_APP_URL + `/public/table.jpeg?t=` + new Date().getMilliseconds();
     }
 };
 exports.default = GeneratorImage;
