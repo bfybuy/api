@@ -42,7 +42,7 @@ const GeneratorImage = {
 		const pic_path = path.resolve('public/table.jpeg')
 
 		await Promise.all([
-			await page.goto(process.env.BASE_URL + '/v1/template/telegram'),
+			await page.goto(process.env.SSL_APP_URL + '/v1/template/telegram'),
 			await page.screenshot({ path: pic_path }),
 			await page.close()
 		])

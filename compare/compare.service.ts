@@ -63,7 +63,12 @@ const CompareService = {
 		const uniqueSources = []
 		const responseBody = []
 		const search = []
-		data.map((product: { matches: any[]; search: string | number; }) => {
+
+		data.forEach((product: { matches: any[]; search: string | number; }) => {
+
+			if (!product.matches || product.matches.length === 0) {
+				return
+			}
 
 			// Push the search keyword
 			search.push(product.search)
