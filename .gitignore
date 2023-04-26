@@ -1,4 +1,4 @@
 node_modules
 .keys
 .env
-# build - for now so we can build manually locally
+build
