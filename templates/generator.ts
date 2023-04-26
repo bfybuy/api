@@ -1,10 +1,15 @@
+import path from 'path';
 import puppeteer from 'puppeteer'
 // import querystring from 'querystring'
 import qs from 'qs'
 
 const GeneratorImage = {
 	async table(postData) {
-		const browser = await puppeteer.launch({});
+		const browser = await puppeteer.launch({
+			headless: true,
+			executablePath: process.env?.CHROMIUM_PATH,
+			args: ['--no-sandbox'],
+		});
 
 		const page = await browser.newPage();
 
@@ -34,9 +39,11 @@ const GeneratorImage = {
 			await page.setRequestInterception(false);
 		});
 
+		const pic_path = path.resolve('public/table.jpeg')
+
 		await Promise.all([
 			await page.goto(process.env.BASE_URL + '/v1/template/telegram'),
-			await page.screenshot({ path: './public/table.jpeg' }),
+			await page.screenshot({ path: pic_path }),
 			await page.close()
 		])
 

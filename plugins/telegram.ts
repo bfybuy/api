@@ -38,6 +38,8 @@ async function Telegram(fastify, options, done) {
 
 			const url = await GeneratorImage.table(sortedResults)
 
+			console.log('Returned URL for file is ', url)
+
 			bot.sendMessage(msg.chat.id, `We've found the best stores to purchase your grocery items from!!`);
 			bot.sendPhoto(msg.chat.id, url);
 		}

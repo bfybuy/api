@@ -21,8 +21,9 @@ async function app(options: FastifyHttp2SecureOptions<Http2SecureServer, Fastify
 	fastify.register(require('@fastify/formbody'))
 	fastify.register(require('@fastify/view'), viewsConfig)
 	fastify.register(apiRoutes, { prefix: '/v1' })
+
 	fastify.register(fastifyStatic, {
-		root: path.join(__dirname, 'public'),
+		root: path.resolve('public'),
 		prefix: '/public/', // optional: default '/'
 		// constraints: { host: 'example.com' } // maybe we allow only api.telegram.com
 	})

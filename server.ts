@@ -15,6 +15,7 @@ const start = async () => {
 	try {
 		await server.listen({
 			// @ts-ignore
+			host: '0.0.0.0',
 			port: parseInt(process.env.APP_PORT),
 		})
 	} catch (err) {

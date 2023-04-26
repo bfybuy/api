@@ -8,14 +8,26 @@ const UserService = {
 	 */
 	storeUser(msg) {
 		// Store user data if not exist
+
 		// @ts-ignore
-		const user = new User({
+		const existing = User.find({
+			email: msg.from.email,
 			firstname: msg.from.first_name,
-			lastname: msg.from.last_name,
-			agent: 'Telegram',
+			lastname: msg.from.last_name
 		})
 
-		user.save()
+		if (!existing || existing.length === 0) {
+			console.log('User does not exist ')
+			// @ts-ignore
+			const user = new User({
+				firstname: msg.from.first_name,
+				lastname: msg.from.last_name,
+				agent: 'Telegram',
+				email: msg?.from?.email
+			})
+
+			user.save()
+		}
 	}
 }
 
