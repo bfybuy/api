@@ -77,7 +77,7 @@ const CompareService = {
 
 			// Some products may not have a price (tough!) - so we have to remove them
 			// Price or size has to be at least greater than 1 so we avoid (weird?) zero values
-			const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1)
+			const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1 && item.size !== null)
 
 			console.log('Cleaned products is ', cleanedProducts.length)
 
@@ -87,7 +87,7 @@ const CompareService = {
 				b = CompareService.pricePerUnit(b)
 
 				// Sort a after b if a has a higher cost_per_unit than b
-				return a.cost_per_unit > b.cost_per_unit ? 1 : -1
+				return a?.cost_per_unit > b?.cost_per_unit ? 1 : -1
 			})
 
 
@@ -188,6 +188,11 @@ const CompareService = {
 			products.unshift(search[index])
 
 			return products.map(item => {
+				if (item.price && !item.cost_rate) {
+					console.log('Item ', item.name, ' for ', item.price, ' has a price but no cost_rate ', item.cost_rate, ' and maybe has a size? ', item.size)
+					return false
+				}
+
 				return {
 					name: item?.name || item,
 					cost_rate: item.cost_rate ? `${item.cost_rate?.cost_per_unit_string}/100${item.cost_rate?.unit}` : item,
@@ -246,6 +251,10 @@ const CompareService = {
 		const regex = /\d+(\D+)/g
 
 		// size: 900ml, unit: ml
+		if (!product.size.match(regex)) {
+			return
+		}
+
 		let [size, unit] = regex.exec(product.size)
 
 		// Get the size without the unit using this weird method
