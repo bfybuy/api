@@ -129,7 +129,7 @@ uk_grocers = [
 		'productImageClass': 'fop-img',
 	},
 	{
-	 	'active': True,
+	 	'active': False,
 		'title': 'Waitrose &amp; Partners | Food | Drink | Recipes',
 		'href': 'https://www.waitrose.com/',
 		'navEl': 'nav',
@@ -169,8 +169,15 @@ for grocer in uk_grocers:
 		content = response.content
 		# Pass the content to BeautifulSoup for parsing
 		soup = BeautifulSoup(content, 'html.parser')
+
 		# Find all category links within the navigation bar
-		nav_categories = soup.find('div',{'class':'primaryBar-container'}).findAll('a')
+		nav_categories = soup.find('div',{'class':'primaryBar-container'})
+
+		if (nav_categories):
+			nav_categories = nav_categories.findAll('a')
+		else:
+			print(f'Nav links do not exist for this {nav_categories} or {grocer_title}')
+			continue
 
 		print(f'Found {len(nav_categories)} categories in the navbar')
 
@@ -201,6 +208,8 @@ for grocer in uk_grocers:
 
 					if (product_link):
 						product_link = product_link['href']
+					elif (product.css.select_one('.fop-content-wrapper > a')):
+						product_link = product.css.select_one('.fop-content-wrapper > a')
 					else:
 						print(f'Product {product} does not have a valid link so we are skipping it')
 						continue
