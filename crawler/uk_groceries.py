@@ -289,7 +289,8 @@ for grocer in uk_grocers:
 				with open('uk_grocery_products.json', 'w') as f:
 					json.dump(products, f, indent=4)
 				print(f'Error occurred on product page {e}')
-
+# https://www.ocado.com/webshop/api/v1/products?
+# skus=21628011,12669011,30568011,94679011,79467011,304362011,278140011
 	except Exception as e:
 		# Save product information in a JSON file
 		with open('uk_grocery_products.json', 'w') as f:
