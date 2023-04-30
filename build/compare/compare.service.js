@@ -43,12 +43,12 @@ const CompareService = {
             }
             search.push(product.search);
             console.log('Uncleaned matches for ', product.search, 'are ', product.matches.length);
-            const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1);
+            const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1 && item.size !== null);
             console.log('Cleaned products is ', cleanedProducts.length);
             const sortedResults = cleanedProducts === null || cleanedProducts === void 0 ? void 0 : cleanedProducts.sort((a, b) => {
                 a = CompareService.pricePerUnit(a);
                 b = CompareService.pricePerUnit(b);
-                return a.cost_per_unit > b.cost_per_unit ? 1 : -1;
+                return (a === null || a === void 0 ? void 0 : a.cost_per_unit) > (b === null || b === void 0 ? void 0 : b.cost_per_unit) ? 1 : -1;
             });
             const bestThree = sortedResults.slice(0, 2);
             for (let x = 0; x < bestThree.length; x++) {
@@ -107,6 +107,10 @@ const CompareService = {
             products.unshift(search[index]);
             return products.map(item => {
                 var _a, _b, _c;
+                if (item.price && !item.cost_rate) {
+                    console.log('Item ', item.name, ' for ', item.price, ' has a price but no cost_rate ', item.cost_rate, ' and maybe has a size? ', item.size);
+                    return false;
+                }
                 return {
                     name: (item === null || item === void 0 ? void 0 : item.name) || item,
                     cost_rate: item.cost_rate ? `${(_a = item.cost_rate) === null || _a === void 0 ? void 0 : _a.cost_per_unit_string}/100${(_b = item.cost_rate) === null || _b === void 0 ? void 0 : _b.unit}` : item,
@@ -137,6 +141,9 @@ const CompareService = {
             price = price / 100;
         }
         const regex = /\d+(\D+)/g;
+        if (!product.size.match(regex)) {
+            return;
+        }
         let [size, unit] = regex.exec(product.size);
         size = product.size.slice(0, unit.length + 1);
         const number = new Intl.NumberFormat('en-GB', {

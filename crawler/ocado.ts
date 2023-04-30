@@ -14,7 +14,7 @@ import path from 'path';
 
   const navLinks = await page.$$('.primaryBar-container a')
 
-  const navbarurls = []
+//   const navbarurls = []
 
   const ocadoProducts = []
 
@@ -61,7 +61,7 @@ import path from 'path';
 			const productKey = Object.keys(collection)[0]
 
 			const sections = collection[productKey].mainFopCollection.sections
-			const totalProducts = collection[productKey].mainFopCollection.totalFops
+			// const totalProducts = collection[productKey].mainFopCollection.totalFops
 
 			// Populate the SKUs found here
 			const skus = []
@@ -135,7 +135,7 @@ import path from 'path';
 function writeToFile(filename, content) {
 	const directory = path.resolve('./data')
 
-	fs.writeFile(`${directory}/${filename}.json`, JSON.stringify(content, false, "\t"), { flag: 'w' }, err => {
+	fs.writeFile(`${directory}/${filename}.json`, JSON.stringify(content, this, "\t"), { flag: 'w' }, err => {
 		if (err) {
 			console.error('Failed to write to file', err);
 			return
