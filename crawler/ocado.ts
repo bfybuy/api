@@ -23,6 +23,8 @@ dotenv.config();
 
   const ocadoFailedUrls = []
 
+  const urls = []
+
   try {
 	console.log(`Found ${navLinks.length} links`)
 
@@ -96,43 +98,59 @@ dotenv.config();
 
 			// Chunk SKU into comma separated string of 11 SKUs to append to the API url
 			// And visit the url to create an array of product
-			for (let x = 0; x < skus.length; x += 11) {
-				const eleven = skus.slice(x, x+11)
 
+			// First of all create urls from all the SKUs
+			for (let index = 0; index < skus.length; index+=11) {
+				const eleven = skus.slice(index, index+11)
 				const qs = eleven.join(',')
-
 				const url = `https://www.ocado.com/webshop/api/v1/products?skus=${qs}`
+				urls.push(url)
+			}
 
-				const skuPage = await browser.newPage()
+			console.log('Array of urls size is ', urls.length)
 
-				console.log('visiting ', url)
-				await skuPage.goto(url, {
-					timeout: 100000
-				})
+			while(urls.length > 0) {
+				const batch = urls.splice(0, 5)
 
-				const body = await skuPage.$('body')
-				const html = await skuPage.evaluate(body => body.textContent, body);
+				const pages = await Promise.all(batch.map(url => browser.newPage()));
 
-				const data = JSON.parse(html)
+				await Promise.all(pages.map((page, index) => page.goto(batch[index])));
 
-				// console.log("parsed data is ", data)
+				let data = await Promise.all(pages.map(async(page) => {
+					const body = await page.$('body')
+					const html = await page.evaluate(body => body.textContent, body);
 
-				data.forEach(product => {
-					ocadoProducts.push({
-						title: product.name,
-						link: `https://www.ocado.com/products/${product.sku}`,
-						images: [],
-						price: product.price,
-						size: product?.catchWeight,
-						category: product?.mainCategory,
-						offer: product?.offer,
-						reviews: {
-							ratings: product.reviewStats?.averageRate,
-							count: product.reviewStats?.count
-						},
-						productMeta: product.packInfo
+					const data = JSON.parse(html)
+
+					return data
+				}))
+
+				// Data is an array of 5 arrays, so we will iterate it
+				console.log(data.length, ' is data length')
+				for (const products of data) {
+					// console.log('Data is ', products, ' with length of ', products.length)
+					products.forEach(product => {
+						ocadoProducts.push({
+							title: product.name,
+							link: `https://www.ocado.com/products/${product.sku}`,
+							images: [],
+							price: product.price,
+							size: product?.catchWeight,
+							category: product?.mainCategory,
+							offer: product?.offer,
+							reviews: {
+								ratings: product.reviewStats?.averageRate,
+								count: product.reviewStats?.count
+							},
+							productMeta: product.packInfo
+						})
 					})
-				})
+				}
+
+				writeToFile('ocado-v3', ocadoProducts)
+
+				await Promise.all(pages.map(page => page.close()));
+			    await (await browser.createIncognitoBrowserContext()).close(); // Close the browser context to free up memory
 			}
 
 			// After each visit to the SKU url, write to our JSON output

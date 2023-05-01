@@ -44,6 +44,7 @@ dotenv.config();
     const navbarurls = [];
     const ocadoProducts = [];
     const ocadoFailedUrls = [];
+    const urls = [];
     try {
         console.log(`Found ${navLinks.length} links`);
         for (const link of navLinks) {
@@ -89,35 +90,47 @@ dotenv.config();
                         }
                     }
                 }
-                for (let x = 0; x < skus.length; x += 11) {
-                    const eleven = skus.slice(x, x + 11);
+                for (let index = 0; index < skus.length; index += 11) {
+                    const eleven = skus.slice(index, index + 11);
                     const qs = eleven.join(',');
                     const url = `https://www.ocado.com/webshop/api/v1/products?skus=${qs}`;
-                    const skuPage = await browser.newPage();
-                    console.log('visiting ', url);
-                    await skuPage.goto(url, {
-                        timeout: 100000
-                    });
-                    const body = await skuPage.$('body');
-                    const html = await skuPage.evaluate(body => body.textContent, body);
-                    const data = JSON.parse(html);
-                    data.forEach(product => {
-                        var _a, _b;
-                        ocadoProducts.push({
-                            title: product.name,
-                            link: `https://www.ocado.com/products/${product.sku}`,
-                            images: [],
-                            price: product.price,
-                            size: product === null || product === void 0 ? void 0 : product.catchWeight,
-                            category: product === null || product === void 0 ? void 0 : product.mainCategory,
-                            offer: product === null || product === void 0 ? void 0 : product.offer,
-                            reviews: {
-                                ratings: (_a = product.reviewStats) === null || _a === void 0 ? void 0 : _a.averageRate,
-                                count: (_b = product.reviewStats) === null || _b === void 0 ? void 0 : _b.count
-                            },
-                            productMeta: product.packInfo
+                    urls.push(url);
+                }
+                console.log('Array of urls size is ', urls.length);
+                while (urls.length > 0) {
+                    const batch = urls.splice(0, 5);
+                    console.log('Batch url is ', batch);
+                    const pages = await Promise.all(batch.map(url => browser.newPage()));
+                    await Promise.all(pages.map((page, index) => page.goto(batch[index])));
+                    let data = await Promise.all(pages.map(async (page) => {
+                        const body = await page.$('body');
+                        const html = await page.evaluate(body => body.textContent, body);
+                        const data = JSON.parse(html);
+                        return data;
+                    }));
+                    console.log(data.length, ' is data length');
+                    for (const products of data) {
+                        products.forEach(product => {
+                            var _a, _b;
+                            ocadoProducts.push({
+                                title: product.name,
+                                link: `https://www.ocado.com/products/${product.sku}`,
+                                images: [],
+                                price: product.price,
+                                size: product === null || product === void 0 ? void 0 : product.catchWeight,
+                                category: product === null || product === void 0 ? void 0 : product.mainCategory,
+                                offer: product === null || product === void 0 ? void 0 : product.offer,
+                                reviews: {
+                                    ratings: (_a = product.reviewStats) === null || _a === void 0 ? void 0 : _a.averageRate,
+                                    count: (_b = product.reviewStats) === null || _b === void 0 ? void 0 : _b.count
+                                },
+                                productMeta: product.packInfo
+                            });
                         });
-                    });
+                    }
+                    writeToFile('ocado-v3', ocadoProducts);
+                    await Promise.all(pages.map(page => page.close()));
+                    await (await browser.createIncognitoBrowserContext()).close();
                 }
                 writeToFile('ocado-v3', ocadoProducts);
                 writeToFile('ocado-failed-urls', ocadoFailedUrls);
