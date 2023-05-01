@@ -2,7 +2,8 @@
 	"extends": "fastify-tsconfig",
 	"ts-node": {
         "compilerOptions": {
-            "module": "CommonJS"
+            "module": "CommonJS",
+			"lib": ["DOM"]
         }
     },
 	"compilerOptions": {

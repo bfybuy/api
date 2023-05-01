@@ -7,8 +7,21 @@
 		{
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
-			"name": "nodemon",
+			"name": "nodemon server",
 			"program": "${workspaceFolder}/server.ts",
+			"request": "launch",
+			"restart": true,
+			"runtimeExecutable": "${workspaceFolder}/node_modules/.bin/nodemon",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"type": "node"
+		},
+		{
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"name": "nodemon crawler",
+			"program": "${workspaceFolder}/crawler/ocado.ts",
 			"request": "launch",
 			"restart": true,
 			"runtimeExecutable": "${workspaceFolder}/node_modules/.bin/nodemon",

@@ -1,7 +1,10 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs'
-import axios from 'axios'
 import path from 'path';
+import AWS from 'aws-sdk'
+import * as dotenv from 'dotenv'
+
+dotenv.config();
 
 (async () => {
   const browser = await puppeteer.launch();
@@ -14,14 +17,21 @@ import path from 'path';
 
   const navLinks = await page.$$('.primaryBar-container a')
 
-//   const navbarurls = []
+  const navbarurls = []
 
   const ocadoProducts = []
 
+  const ocadoFailedUrls = []
+
   try {
+	console.log(`Found ${navLinks.length} links`)
+
 	for (const link of navLinks) {
 		// Get all category urls
 		const url = await page.evaluate(link => link.href, link)
+
+		console.log(url)
+		navbarurls.push(url)
 
 		// Visit each url
 		const categoryPage = await browser.newPage();
@@ -60,8 +70,10 @@ import path from 'path';
 			const collection = json.catalogue.productsPagesByRoute
 			const productKey = Object.keys(collection)[0]
 
-			const sections = collection[productKey].mainFopCollection.sections
-			// const totalProducts = collection[productKey].mainFopCollection.totalFops
+			const sections = collection[productKey]?.mainFopCollection.sections
+			const totalProducts = collection[productKey]?.mainFopCollection.totalFops
+
+			console.log(`We should have ${totalProducts} products from this ${url}`)
 
 			// Populate the SKUs found here
 			const skus = []
@@ -83,8 +95,7 @@ import path from 'path';
 			}
 
 			// Chunk SKU into comma separated string of 11 SKUs to append to the API url
-			console.log(`All SKUs on this page is ${skus.length}`)
-
+			// And visit the url to create an array of product
 			for (let x = 0; x < skus.length; x += 11) {
 				const eleven = skus.slice(x, x+11)
 
@@ -92,42 +103,62 @@ import path from 'path';
 
 				const url = `https://www.ocado.com/webshop/api/v1/products?skus=${qs}`
 
-				axios.get(url)
-				.then(response => {
-					const data = response.data
+				const skuPage = await browser.newPage()
 
-					data.forEach(product => {
-						ocadoProducts.push({
-							title: product.name,
-							link: `https://www.ocado.com/products/${product.sku}`,
-							images: [],
-							price: product.price,
-							size: product?.catchWeight,
-							category: product?.mainCategory,
-							offer: product?.offer,
-							reviews: {
-								ratings: product.reviewStats?.averageRate,
-								count: product.reviewStats?.count
-							},
-							productMeta: product.packInfo
-						})
-					})
+				console.log('visiting ', url)
+				await skuPage.goto(url, {
+					timeout: 100000
 				})
-				.catch(error => {
-					console.log('An error has occurred ', error)
-					writeToFile('ocado', ocadoProducts)
+
+				const body = await skuPage.$('body')
+				const html = await skuPage.evaluate(body => body.textContent, body);
+
+				const data = JSON.parse(html)
+
+				// console.log("parsed data is ", data)
+
+				data.forEach(product => {
+					ocadoProducts.push({
+						title: product.name,
+						link: `https://www.ocado.com/products/${product.sku}`,
+						images: [],
+						price: product.price,
+						size: product?.catchWeight,
+						category: product?.mainCategory,
+						offer: product?.offer,
+						reviews: {
+							ratings: product.reviewStats?.averageRate,
+							count: product.reviewStats?.count
+						},
+						productMeta: product.packInfo
+					})
 				})
 			}
 
-			writeToFile('ocado', ocadoProducts)
+			// After each visit to the SKU url, write to our JSON output
+			writeToFile('ocado-v3', ocadoProducts)
+			writeToFile('ocado-failed-urls', ocadoFailedUrls)
+
+			// Added this to test notification
+			// sendNotification(`Crawling done!! Crawled a total of ${ocadoProducts.length} products successfully!!`)
 
 		} else {
 			console.log('No matching script tag found');
 		}
 	}
-  } catch (error) {
-	writeToFile('ocado', ocadoProducts)
-  }
+	} catch (error) {
+		console.log('An error occurred ', error)
+		writeToFile('ocado-links', navbarurls)
+		writeToFile('ocado-failed-urls', ocadoFailedUrls)
+		writeToFile('ocado-v3', ocadoProducts)
+	}
+
+	writeToFile('ocado-links', navbarurls)
+	writeToFile('ocado-failed-urls', ocadoFailedUrls)
+	writeToFile('ocado-v3', ocadoProducts)
+
+	// Process should be done here
+	sendNotification(`Crawling done!! Crawled a total of ${ocadoProducts.length} products successfully!!`)
 
   await browser.close();
 })();
@@ -141,4 +172,29 @@ function writeToFile(filename, content) {
 			return
 		}
 	})
+}
+
+function sendNotification(msg = 'Crawling is finished') {
+	AWS.config.update({
+		accessKeyId: process.env.AWS_KEY_ID,
+		secretAccessKey: process.env.AWS_ACCESS_ID,
+		region: 'us-west-2'
+	})
+
+	// Create publish parameters
+	var params = {
+		Message: msg, /* required */
+		TopicArn: 'arn:aws:sns:us-west-2:327676338247:CrawlerNotification'
+	};
+
+	// Create promise and SNS service object
+	var publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
+
+	// Handle promise's fulfilled/rejected states
+	publishTextPromise.then((data) => {
+			console.log(`Message ${params.Message} sent to the topic ${params.TopicArn}`);
+			console.log("MessageID is " + data.MessageId);
+	}).catch((err) => {
+			console.error(err, err.stack);
+	});
 }
