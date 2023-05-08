@@ -9,7 +9,7 @@ dotenv.config();
   const page = await browser.newPage();
   await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36');
 
-  await page.goto('https://www.ocado.com', {
+  await page.goto('https://groceries.morrisons.com', {
 	timeout: 100000
   })
 
@@ -101,7 +101,7 @@ dotenv.config();
 			for (let index = 0; index < skus.length; index+=11) {
 				const eleven = skus.slice(index, index+11)
 				const qs = eleven.join(',')
-				const url = `https://www.ocado.com/webshop/api/v1/products?skus=${qs}`
+				const url = `https://groceries.morrisons.com/webshop/api/v1/products?skus=${qs}`
 				urls.push(url)
 			}
 
@@ -130,7 +130,7 @@ dotenv.config();
 					products.forEach(product => {
 						ocadoProducts.push({
 							title: product.name,
-							link: `https://www.ocado.com/products/${product.sku}`,
+							link: `https://groceries.morrisons.com/products/${product.sku}`,
 							images: [],
 							price: product.price,
 							size: product?.catchWeight,
@@ -145,15 +145,15 @@ dotenv.config();
 					})
 				}
 
-				writeToFile('ocado-v3', ocadoProducts)
+				writeToFile('morrisons-v1', ocadoProducts)
 
 				await Promise.all(pages.map(page => page.close()));
 			    await (await browser.createIncognitoBrowserContext()).close(); // Close the browser context to free up memory
 			}
 
 			// After each visit to the SKU url, write to our JSON output
-			writeToFile('ocado-v3', ocadoProducts)
-			writeToFile('ocado-failed-urls', ocadoFailedUrls)
+			writeToFile('morrisons-v1', ocadoProducts)
+			writeToFile('morrisons-failed-urls', ocadoFailedUrls)
 
 			// Added this to test notification
 			// sendNotification(`Crawling done!! Crawled a total of ${ocadoProducts.length} products successfully!!`)
@@ -164,17 +164,17 @@ dotenv.config();
 	}
 	} catch (error) {
 		console.log('An error occurred ', error)
-		writeToFile('ocado-links', navbarurls)
-		writeToFile('ocado-failed-urls', ocadoFailedUrls)
-		writeToFile('ocado-v3', ocadoProducts)
+		writeToFile('morrisons-link', navbarurls)
+		writeToFile('morrisons-failed-urls', ocadoFailedUrls)
+		writeToFile('morrisons-v1', ocadoProducts)
 	}
 
-	writeToFile('ocado-links', navbarurls)
-	writeToFile('ocado-failed-urls', ocadoFailedUrls)
-	writeToFile('ocado-v3', ocadoProducts)
+	writeToFile('morrisons-link', navbarurls)
+	writeToFile('morrisons-failed-urls', ocadoFailedUrls)
+	writeToFile('morrisons-v1', ocadoProducts)
 
 	// Process should be done here
-	sendNotification(`Crawling done!! Crawled a total of ${ocadoProducts.length} products successfully!!`)
+	sendNotification(`Crawling Morrisons is done!! Crawled a total of ${ocadoProducts.length} products successfully!!`)
 
   await browser.close();
 })();

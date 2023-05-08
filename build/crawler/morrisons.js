@@ -35,7 +35,7 @@ dotenv.config();
     const browser = await puppeteer_1.default.launch();
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36');
-    await page.goto('https://www.ocado.com', {
+    await page.goto('https://groceries.morrisons.com', {
         timeout: 100000
     });
     const navLinks = await page.$$('.primaryBar-container a');
@@ -91,7 +91,7 @@ dotenv.config();
                 for (let index = 0; index < skus.length; index += 11) {
                     const eleven = skus.slice(index, index + 11);
                     const qs = eleven.join(',');
-                    const url = `https://www.ocado.com/webshop/api/v1/products?skus=${qs}`;
+                    const url = `https://groceries.morrisons.com/webshop/api/v1/products?skus=${qs}`;
                     urls.push(url);
                 }
                 console.log('Array of urls size is ', urls.length);
@@ -111,7 +111,7 @@ dotenv.config();
                             var _a, _b;
                             ocadoProducts.push({
                                 title: product.name,
-                                link: `https://www.ocado.com/products/${product.sku}`,
+                                link: `https://groceries.morrisons.com/products/${product.sku}`,
                                 images: [],
                                 price: product.price,
                                 size: product === null || product === void 0 ? void 0 : product.catchWeight,
@@ -125,12 +125,12 @@ dotenv.config();
                             });
                         });
                     }
-                    (0, utils_1.writeToFile)('ocado-v3', ocadoProducts);
+                    (0, utils_1.writeToFile)('morrisons-v1', ocadoProducts);
                     await Promise.all(pages.map(page => page.close()));
                     await (await browser.createIncognitoBrowserContext()).close();
                 }
-                (0, utils_1.writeToFile)('ocado-v3', ocadoProducts);
-                (0, utils_1.writeToFile)('ocado-failed-urls', ocadoFailedUrls);
+                (0, utils_1.writeToFile)('morrisons-v1', ocadoProducts);
+                (0, utils_1.writeToFile)('morrisons-failed-urls', ocadoFailedUrls);
             }
             else {
                 console.log('No matching script tag found');
@@ -139,13 +139,13 @@ dotenv.config();
     }
     catch (error) {
         console.log('An error occurred ', error);
-        (0, utils_1.writeToFile)('ocado-links', navbarurls);
-        (0, utils_1.writeToFile)('ocado-failed-urls', ocadoFailedUrls);
-        (0, utils_1.writeToFile)('ocado-v3', ocadoProducts);
+        (0, utils_1.writeToFile)('morrisons-link', navbarurls);
+        (0, utils_1.writeToFile)('morrisons-failed-urls', ocadoFailedUrls);
+        (0, utils_1.writeToFile)('morrisons-v1', ocadoProducts);
     }
-    (0, utils_1.writeToFile)('ocado-links', navbarurls);
-    (0, utils_1.writeToFile)('ocado-failed-urls', ocadoFailedUrls);
-    (0, utils_1.writeToFile)('ocado-v3', ocadoProducts);
-    (0, utils_1.sendNotification)(`Crawling done!! Crawled a total of ${ocadoProducts.length} products successfully!!`);
+    (0, utils_1.writeToFile)('morrisons-link', navbarurls);
+    (0, utils_1.writeToFile)('morrisons-failed-urls', ocadoFailedUrls);
+    (0, utils_1.writeToFile)('morrisons-v1', ocadoProducts);
+    (0, utils_1.sendNotification)(`Crawling Morrisons is done!! Crawled a total of ${ocadoProducts.length} products successfully!!`);
     await browser.close();
 })();
