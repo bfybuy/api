@@ -33,9 +33,7 @@ const utils_1 = require("./utils");
 dotenv.config();
 (async () => {
     var _a, _b, _c, _d, _e;
-    const browser = await puppeteer_1.default.launch({
-        headless: false,
-    });
+    const browser = await puppeteer_1.default.launch();
     const page = await browser.newPage();
     await page.setViewport({
         width: 1424,

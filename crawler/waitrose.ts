@@ -6,9 +6,7 @@ import { writeToFile, sendNotification } from './utils';
 dotenv.config();
 
 (async () => {
-  const browser = await puppeteer.launch({
-	headless: false,
-  });
+  const browser = await puppeteer.launch();
 
   const page = await browser.newPage();
 
