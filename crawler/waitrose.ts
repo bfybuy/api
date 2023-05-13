@@ -7,14 +7,7 @@ dotenv.config();
 
 (async () => {
   const browser = await puppeteer.launch();
-
   const page = await browser.newPage();
-
-//   Important to set the viewport so the menu can be visible
-  await page.setViewport({
-	width: 1424,
-	height: 768
-  })
 
   await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36');
 
