@@ -37,3 +37,17 @@ export function sendNotification(msg = 'Crawling is finished') {
 			console.error(err, err.stack);
 	});
 }
+
+// @ts-ignore
+async function productCount() {
+	const fileToRead = path.resolve('./data/waitrose.json')
+
+	let products = fs.readFileSync(fileToRead, { encoding: 'utf-8' })
+
+	products = JSON.parse(products)
+
+	console.log('Products in waitrose are ', products.length)
+	console.log('One product is ', products[0])
+
+	return products.length
+}

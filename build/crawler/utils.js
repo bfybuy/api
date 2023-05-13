@@ -36,3 +36,11 @@ function sendNotification(msg = 'Crawling is finished') {
     });
 }
 exports.sendNotification = sendNotification;
+async function productCount() {
+    const fileToRead = path_1.default.resolve('./data/waitrose.json');
+    let products = fs_1.default.readFileSync(fileToRead, { encoding: 'utf-8' });
+    products = JSON.parse(products);
+    console.log('Products in waitrose are ', products.length);
+    console.log('One product is ', products[0]);
+    return products.length;
+}
