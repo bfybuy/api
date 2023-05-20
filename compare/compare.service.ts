@@ -31,8 +31,7 @@ const CompareService = {
 			const productIds = await Product.distinct('name', {
 				// TODO: Only return at least 50% matches
 				$or: [
-					{ name: new RegExp(listItem, 'i') },
-					{ "meta.Ingredients": new RegExp(listItem, 'i') }
+					{ name: new RegExp(listItem, 'i') }
 				]
 			})
 			.exec()
