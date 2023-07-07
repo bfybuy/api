@@ -76,7 +76,7 @@ const CompareService = {
 
 			// Some products may not have a price (tough!) - so we have to remove them
 			// Price or size has to be at least greater than 1 so we avoid (weird?) zero values
-			const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1 && item.size !== null)
+			const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.current > 1 && item.size !== null)
 
 			console.log('Cleaned products is ', cleanedProducts.length)
 
@@ -171,8 +171,6 @@ const CompareService = {
 			}
 		})
 
-		console.log('Search body is ,', search)
-
 		const rowBody = responseBody.map((products, index) => {
 
 			const cheapestProduct = products.reduce((min, item) => {
@@ -194,7 +192,7 @@ const CompareService = {
 
 				return {
 					name: item?.name || item,
-					cost_rate: item.cost_rate ? `${item.cost_rate?.cost_per_unit_string}/100${item.cost_rate?.unit}` : item,
+					cost_rate: item.cost_rate ? `${item.cost_rate?.cost_per_unit_string}/${item.cost_rate?.unit}` : item,
 					source: item?.source?.name || item,
 					...(cheapestProduct?.name === item?.name && { cheapest: true })
 				}
@@ -225,6 +223,29 @@ const CompareService = {
 	},
 
 	/**
+	 * Returns the price as a float after removing
+	 * £ or p at the start/end of the price
+	 */
+	extractPriceWithoutSymbol(price) {
+		// If it's not a string, then just return it
+		if (typeof price !== 'string') {
+			return price
+		}
+
+		if (price?.includes('£')) {
+			price = parseFloat(price?.slice(1))
+		} else if (price?.includes('p')) {
+			price = parseFloat(price?.slice(0, -1))
+			// 100 pence = 1 pound
+			price = price / 100
+		} else {
+			price = parseFloat(price)
+		}
+
+		return price
+	},
+
+	/**
 	 * Following the assumption that all matches for a search
 	 * will have the same unit. For this, we have to be near-accurate
 	 * with our searches. Refer to comment/issue about using Mongo text
@@ -232,40 +253,31 @@ const CompareService = {
 	 * @param product
 	 */
 	pricePerUnit (product) {
-		let price = null
+		/**
+		 * 1. Get the price
+		 * 2. Get the size
+		 * 3. Get the price per size
+		 */
 
 		// Get price from product and convert all to pounds
-		if (product?.price?.includes('£')) {
-			price = parseFloat(product.price?.slice(1))
-		} else if (product?.price?.includes('p')) {
-			price = parseFloat(product.price?.slice(0, -1))
-			// 100 pence = 1 pound
-			price = price / 100
-		}
-
-		// Get correct size from product
-
-		// Regex to get whatever unit follows the size number
-		// TODO: #3 Cater for processing products whose units are packs. e.g: 4 pack
-		const regex = /\d+(\D+)/g
-
-		// size: 900ml, unit: ml
-		if (!product.size.match(regex)) {
-			return
-		}
-
-		let [size, unit] = regex.exec(product.size)
-
-		// Get the size without the unit using this weird method
-		size = product.size.slice(0, unit.length + 1)
+		// Some price may have £ sign in front of them while some may not
+		// Some may be integer/float while some may be string
+		const price = CompareService.extractPriceWithoutSymbol(product.price.current)
 
 		const number = new Intl.NumberFormat('en-GB', {
 			style: 'currency',
 			currency: 'GBP'
 		})
 
-		const cost_per_unit = price / parseInt(size)
-		const cost_per_unit_string = number.format(price / parseInt(size))
+		const cost_per_unit = CompareService.extractPriceWithoutSymbol(product.price.unit.price)
+
+		let unit = product.price.unit.per
+
+		if(unit.includes('per')) {
+			unit = unit.split(' ')[1]
+		}
+
+		const cost_per_unit_string = number.format(cost_per_unit)
 
 		return {
 			unit,

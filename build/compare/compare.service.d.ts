@@ -6,10 +6,11 @@ declare const CompareService: {
         matches: any[];
         search: string | number;
     }[]): Promise<any[]>;
+    extractPriceWithoutSymbol(price: any): any;
     pricePerUnit(product: any): {
-        unit: string;
+        unit: any;
         price: any;
-        cost_per_unit: number;
+        cost_per_unit: any;
         cost_per_unit_string: string;
     };
 };

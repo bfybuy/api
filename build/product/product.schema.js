@@ -7,7 +7,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const ProductSchema = new mongoose_1.default.Schema({
     name: String,
     description: String,
-    price: String,
+    price: Object,
     category: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'Categories'

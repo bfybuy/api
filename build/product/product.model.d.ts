@@ -35,7 +35,7 @@ declare const Product: import("mongoose").Model<any, {}, {}, {}, any, any> | imp
     description?: string;
     size?: string;
     source?: import("mongoose").Types.ObjectId;
-    price?: string;
+    price?: any;
     url?: string;
     category?: import("mongoose").Types.ObjectId;
 }, {}, {}, {}, import("mongoose").Document<unknown, {}, {
@@ -48,7 +48,7 @@ declare const Product: import("mongoose").Model<any, {}, {}, {}, any, any> | imp
     description?: string;
     size?: string;
     source?: import("mongoose").Types.ObjectId;
-    price?: string;
+    price?: any;
     url?: string;
     category?: import("mongoose").Types.ObjectId;
 }> & Omit<{
@@ -61,7 +61,7 @@ declare const Product: import("mongoose").Model<any, {}, {}, {}, any, any> | imp
     description?: string;
     size?: string;
     source?: import("mongoose").Types.ObjectId;
-    price?: string;
+    price?: any;
     url?: string;
     category?: import("mongoose").Types.ObjectId;
 } & {

@@ -11,7 +11,7 @@ declare const ProductSchema: mongoose.Schema<any, mongoose.Model<any, any, any, 
     description?: string;
     size?: string;
     source?: mongoose.Types.ObjectId;
-    price?: string;
+    price?: any;
     url?: string;
     category?: mongoose.Types.ObjectId;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
@@ -24,7 +24,7 @@ declare const ProductSchema: mongoose.Schema<any, mongoose.Model<any, any, any, 
     description?: string;
     size?: string;
     source?: mongoose.Types.ObjectId;
-    price?: string;
+    price?: any;
     url?: string;
     category?: mongoose.Types.ObjectId;
 }>> & Omit<mongoose.FlatRecord<{
@@ -37,7 +37,7 @@ declare const ProductSchema: mongoose.Schema<any, mongoose.Model<any, any, any, 
     description?: string;
     size?: string;
     source?: mongoose.Types.ObjectId;
-    price?: string;
+    price?: any;
     url?: string;
     category?: mongoose.Types.ObjectId;
 }> & {

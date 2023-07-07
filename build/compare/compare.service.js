@@ -15,8 +15,7 @@ const CompareService = {
             const listItem = list[index];
             const productIds = await product_model_1.Product.distinct('name', {
                 $or: [
-                    { name: new RegExp(listItem, 'i') },
-                    { "meta.Ingredients": new RegExp(listItem, 'i') }
+                    { name: new RegExp(listItem, 'i') }
                 ]
             })
                 .exec();
@@ -43,7 +42,7 @@ const CompareService = {
             }
             search.push(product.search);
             console.log('Uncleaned matches for ', product.search, 'are ', product.matches.length);
-            const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.length > 1 && item.size !== null);
+            const cleanedProducts = product.matches.filter(item => item.price && item.size && item.size.length > 1 && item.price.current > 1 && item.size !== null);
             console.log('Cleaned products is ', cleanedProducts.length);
             const sortedResults = cleanedProducts === null || cleanedProducts === void 0 ? void 0 : cleanedProducts.sort((a, b) => {
                 a = CompareService.pricePerUnit(a);
@@ -96,7 +95,6 @@ const CompareService = {
                 text: 0
             };
         });
-        console.log('Search body is ,', search);
         const rowBody = responseBody.map((products, index) => {
             const cheapestProduct = products.reduce((min, item) => {
                 var _a;
@@ -113,7 +111,7 @@ const CompareService = {
                 }
                 return {
                     name: (item === null || item === void 0 ? void 0 : item.name) || item,
-                    cost_rate: item.cost_rate ? `${(_a = item.cost_rate) === null || _a === void 0 ? void 0 : _a.cost_per_unit_string}/100${(_b = item.cost_rate) === null || _b === void 0 ? void 0 : _b.unit}` : item,
+                    cost_rate: item.cost_rate ? `${(_a = item.cost_rate) === null || _a === void 0 ? void 0 : _a.cost_per_unit_string}/${(_b = item.cost_rate) === null || _b === void 0 ? void 0 : _b.unit}` : item,
                     source: ((_c = item === null || item === void 0 ? void 0 : item.source) === null || _c === void 0 ? void 0 : _c.name) || item,
                     ...((cheapestProduct === null || cheapestProduct === void 0 ? void 0 : cheapestProduct.name) === (item === null || item === void 0 ? void 0 : item.name) && { cheapest: true })
                 };
@@ -130,28 +128,34 @@ const CompareService = {
         console.log('Final response looks like ', response);
         return response;
     },
-    pricePerUnit(product) {
-        var _a, _b, _c, _d;
-        let price = null;
-        if ((_a = product === null || product === void 0 ? void 0 : product.price) === null || _a === void 0 ? void 0 : _a.includes('£')) {
-            price = parseFloat((_b = product.price) === null || _b === void 0 ? void 0 : _b.slice(1));
+    extractPriceWithoutSymbol(price) {
+        if (typeof price !== 'string') {
+            return price;
         }
-        else if ((_c = product === null || product === void 0 ? void 0 : product.price) === null || _c === void 0 ? void 0 : _c.includes('p')) {
-            price = parseFloat((_d = product.price) === null || _d === void 0 ? void 0 : _d.slice(0, -1));
+        if (price === null || price === void 0 ? void 0 : price.includes('£')) {
+            price = parseFloat(price === null || price === void 0 ? void 0 : price.slice(1));
+        }
+        else if (price === null || price === void 0 ? void 0 : price.includes('p')) {
+            price = parseFloat(price === null || price === void 0 ? void 0 : price.slice(0, -1));
             price = price / 100;
         }
-        const regex = /\d+(\D+)/g;
-        if (!product.size.match(regex)) {
-            return;
+        else {
+            price = parseFloat(price);
         }
-        let [size, unit] = regex.exec(product.size);
-        size = product.size.slice(0, unit.length + 1);
+        return price;
+    },
+    pricePerUnit(product) {
+        const price = CompareService.extractPriceWithoutSymbol(product.price.current);
         const number = new Intl.NumberFormat('en-GB', {
             style: 'currency',
             currency: 'GBP'
         });
-        const cost_per_unit = price / parseInt(size);
-        const cost_per_unit_string = number.format(price / parseInt(size));
+        const cost_per_unit = CompareService.extractPriceWithoutSymbol(product.price.unit.price);
+        let unit = product.price.unit.per;
+        if (unit.includes('per')) {
+            unit = unit.split(' ')[1];
+        }
+        const cost_per_unit_string = number.format(cost_per_unit);
         return {
             unit,
             price,
